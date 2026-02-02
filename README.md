@@ -6,7 +6,7 @@
 
 **Easy File Server** is a robust, open-source, self-hosted cloud storage solution. It provides a Google Drive-like experience on your own machine, allowing you to store, edit, stream, and share files securely. Built with Python Tornado for high performance and low latency.
 
-[![Demo website](https://img.shields.io/badge/easy_file_server-demo-blue)](https://www.sharing-file.com/)
+[sharing-file.com  ![](https://img.shields.io/badge/easy_file_server-demo-blue)](https://www.sharing-file.com/)
 
 
 ## ✨ Features
