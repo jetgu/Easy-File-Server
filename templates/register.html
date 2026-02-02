@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5"> <!-- Slightly wider -->
+        <div class="card p-4">
+            <h3 class="text-center">Register</h3>
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% end %}
+            <form method="post" action="/register">
+                <div class="mb-3">
+                    <label>Email</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                
+                <!-- NEW: Personal Info -->
+                <div class="mb-3">
+                    <label>Personal Info</label>
+                    <textarea name="info" class="form-control" rows="2" placeholder="Tell us about yourself"></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="> 8 chars" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Retype Password</label>
+                        <input type="password" name="confirm_password" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label>Captcha</label>
+                    <div class="input-group">
+                        <input type="text" name="captcha" class="form-control" required>
+                        <img src="/captcha/image" onclick="this.src='/captcha/image?'+Math.random()" style="cursor:pointer" title="Click to refresh">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Register</button>
+            </form>
+            <div class="mt-3 text-center">
+                <a href="/login">Back to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}

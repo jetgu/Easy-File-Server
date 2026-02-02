@@ -1,0 +1,576 @@
+{% extends "layout.html" %}
+{% block content %}
+<!-- Admin Banner -->
+{% if target_user and target_user['id'] != user['id'] %}
+<div class="alert alert-warning d-flex justify-content-between align-items-center">
+    <span>
+        <i class="bi bi-exclamation-triangle-fill"></i> 
+        Viewing files of: <strong>{{ target_user['email'] }}</strong>
+    </span>
+    <a href="/admin" class="btn btn-sm btn-outline-dark">Return to Admin</a>
+</div>
+{% end %}
+<!-- Quota Progress Bar -->
+<div class="card mb-3 shadow-sm">
+    <div class="card-body py-2 px-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted"><i class="bi bi-hdd-fill"></i> Storage Usage</span>
+            <span class="small fw-bold">{{ usage_str }}</span>
+        </div>
+        <div class="progress" style="height: 8px;">
+            <div class="progress-bar {{ 'bg-danger' if usage_percent > 90 else 'bg-success' }}" 
+                 role="progressbar" 
+                 style="width: {{ usage_percent }}%">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/?target_user_id={{target_user_id}}">Home</a></li>
+            <li class="breadcrumb-item active">{{ current_path }}</li>
+        </ol>
+    </nav>
+    <div class="btn-group">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="bi bi-upload"></i> Upload</button>
+        <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#folderModal"><i class="bi bi-folder-plus"></i> New Folder</button>
+		<!-- NEW: New File Button -->
+		<button class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#newFileModal"><i class="bi bi-file-earmark-plus"></i> New File</button>
+        <!-- NEW: Paste Button (Hidden by default) -->
+        <button id="btnPaste" class="btn btn-warning d-none" onclick="pasteFile()">
+            <i class="bi bi-clipboard-check"></i> Paste <span id="pasteBadge" class="badge bg-dark"></span>
+        </button>
+        <!-- ----------------------------------- -->
+        <div class="btn-group">
+            <a href="?path={{current_path}}&view=list&target_user_id={{target_user_id}}" class="btn btn-outline-primary {{ 'active' if view == 'list' else '' }}"><i class="bi bi-list"></i></a>
+            <a href="?path={{current_path}}&view=grid&target_user_id={{target_user_id}}" class="btn btn-outline-primary {{ 'active' if view == 'grid' else '' }}"><i class="bi bi-grid"></i></a>
+        </div>
+    </div>
+</div>
+
+<!-- IF LIST VIEW -->
+{% if view == 'list' %}
+<div class="card">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <!-- Name Column -->
+                <th>
+                    <a href="?path={{current_path}}&view={{view}}&sort=name&order={{ 'desc' if sort=='name' and order=='asc' else 'asc' }}&target_user_id={{target_user_id}}">
+                        Name {% if sort == 'name' %}<i class="bi bi-caret-{{ 'up' if order=='asc' else 'down' }}-fill"></i>{% end %}
+                    </a>
+                </th>
+                <!-- Type Column -->
+                <th>
+                    <a href="?path={{current_path}}&view={{view}}&sort=type&order={{ 'desc' if sort=='type' and order=='asc' else 'asc' }}&target_user_id={{target_user_id}}">
+                        Type {% if sort == 'type' %}<i class="bi bi-caret-{{ 'up' if order=='asc' else 'down' }}-fill"></i>{% end %}
+                    </a>
+                </th>
+                <!-- Size Column -->
+                <th>
+                    <a href="?path={{current_path}}&view={{view}}&sort=size&order={{ 'desc' if sort=='size' and order=='asc' else 'asc' }}&target_user_id={{target_user_id}}">
+                        Size {% if sort == 'size' %}<i class="bi bi-caret-{{ 'up' if order=='asc' else 'down' }}-fill"></i>{% end %}
+                    </a>
+                </th>
+                <!-- Date Column -->
+                <th>
+                    <a href="?path={{current_path}}&view={{view}}&sort=mtime&order={{ 'desc' if sort=='mtime' and order=='asc' else 'asc' }}&target_user_id={{target_user_id}}">
+                        Date {% if sort == 'mtime' %}<i class="bi bi-caret-{{ 'up' if order=='asc' else 'down' }}-fill"></i>{% end %}
+                    </a>
+                </th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if current_path %}
+            <tr><td colspan="5"><a href="/?path={{ '/'.join(current_path.split('/')[:-1]) }}&target_user_id={{target_user_id}}"><i class="bi bi-arrow-return-left"></i> ..</a></td></tr>
+            {% end %}
+            {% for item in items %}
+            <tr>
+                <td>
+                    {% if item['is_dir'] %}
+                    <i class="bi bi-folder-fill text-warning"></i> <a href="/?path={{ item['path'] }}&view={{view}}&target_user_id={{target_user_id}}">{{ item['name'] }}</a>
+                    {% else %}
+                    <i class="bi bi-file-earmark-text"></i> {{ item['name'] }}
+                    {% end %}
+                </td>
+                
+                <td><span class="badge bg-light text-dark border">{{ item['type'] }}</span></td>
+                
+                <td>{{ item['size'] if not item['is_dir'] else '-' }}</td>
+                <td>{{ item['mtime'] }}</td>
+                <td>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">:</button>
+                        <ul class="dropdown-menu">
+                            <!-- NEW: Copy/Cut Options -->
+                            <li><a class="dropdown-item" href="#" onclick="setClipboard('copy', '{{item['path']}}')"><i class="bi bi-files"></i> Copy</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setClipboard('cut', '{{item['path']}}')"><i class="bi bi-scissors"></i> Cut</a></li>
+                            <!-- --------------------- -->
+                            <!-- NEW: Rename Option -->
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="openRenameModal('{{item['name']}}')">
+                                    <i class="bi bi-pencil-square"></i> Rename
+                                </a>
+                            </li>
+                        
+                            {% if item['is_dir'] %}
+                            <li><a class="dropdown-item" href="/files/download?path={{item['path']}}&action=zip&target_user_id={{target_user_id}}">Download Zip</a></li>
+                            {% else %}
+                            <li><a class="dropdown-item" href="/files/download?path={{item['path']}}&target_user_id={{target_user_id}}">Download</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="openShareModal('{{item['name']}}')">Share Link</a></li>
+                            {% if item['name'].endswith('.txt') or item['name'].endswith('.py') or item['name'].endswith('.html') %}
+                            <li><a class="dropdown-item" href="#" onclick="editFile('{{item['name']}}', '{{item['path']}}')">Edit</a></li>
+                            {% end %}
+    
+                            <!-- NEW: Play Option for Media -->
+                            {% if item['name'].lower().endswith(('.mp4', '.webm', '.ogg', '.mp3', '.wav')) %}
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="playMedia('{{item['name']}}', '{{item['path']}}')">
+                                    <i class="bi bi-play-circle-fill"></i> Play Online
+                                </a>
+                            </li>
+                            {% end %}
+                            <!-- --------------------------- -->
+                            {% if item['name'].endswith('.zip') %}
+                            <li>
+                                <form action="/files/action" method="post" style="display:inline">
+                                    <input type="hidden" name="action" value="unzip">
+                                    <input type="hidden" name="current_path" value="{{current_path}}">
+                                    <input type="hidden" name="target" value="{{item['name']}}">
+                                    <input type="hidden" name="target_user_id" value="{{target_user_id}}">
+                                    <button class="dropdown-item">Unzip</button>
+                                </form>
+                            </li>
+                            {% end %}
+                            {% end %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="/files/action" method="post">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="current_path" value="{{current_path}}">
+                                    <input type="hidden" name="target" value="{{item['name']}}">
+                                    <input type="hidden" name="target_user_id" value="{{target_user_id}}">
+                                    <button class="dropdown-item text-danger">Delete</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            {% end %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ELSE GRID VIEW -->
+{% else %}
+<div class="row grid-view">
+    {% for item in items %}
+    <div class="col-6 col-md-2 mb-3">
+        <div class="card h-100 text-center p-2">
+            <div class="card-body">
+                {% if item['is_dir'] %}
+                    <a href="/?path={{ item['path'] }}&view={{view}}&target_user_id={{target_user_id}}" class="text-decoration-none">
+                        <i class="bi bi-folder-fill text-warning" style="font-size: 3rem;"></i>
+                    </a>
+                {% else %}
+                    <a href="/files/download?path={{item['path']}}&target_user_id={{target_user_id}}" class="text-decoration-none text-dark" title="Click to Download">
+                        {% if item['name'].lower().endswith(('.png', '.jpg', '.jpeg', '.gif')) %}
+                            <img src="/files/download?path={{item['path']}}&target_user_id={{target_user_id}}" class="img-fluid" style="max-height: 60px;">
+                        {% else %}
+                            <i class="bi bi-file-earmark" style="font-size: 3rem;"></i>
+                        {% end %}
+                    </a>
+                {% end %}
+                
+                <div class="text-truncate mt-2">{{ item['name'] }}</div>
+                <small class="text-muted">{{ item['size'] if not item['is_dir'] else '' }}</small>
+            </div>
+        </div>
+    </div>
+    {% end %}
+</div>
+{% end %} <!-- Closes if view == 'list' -->
+
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal">
+    <div class="modal-dialog">
+        <form action="/files/action" method="post" enctype="multipart/form-data">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Upload File</h5></div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="upload">
+                    <input type="hidden" name="current_path" value="{{current_path}}">
+                    <input type="hidden" name="target_user_id" value="{{target_user_id}}">
+                    <input type="file" name="file1" class="form-control" multiple>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary">Upload</button></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Folder Modal -->
+<div class="modal fade" id="folderModal">
+    <div class="modal-dialog">
+        <form action="/files/action" method="post">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">New Folder</h5></div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="mkdir">
+                    <input type="hidden" name="current_path" value="{{current_path}}">
+                    <input type="hidden" name="target_user_id" value="{{target_user_id}}">
+                    <input type="text" name="name" class="form-control" placeholder="Folder Name" required>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-primary">Create</button></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal">
+    <div class="modal-dialog modal-lg">
+        <form action="/files/action" method="post">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Edit File</h5></div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="edit_save">
+                    <input type="hidden" name="current_path" value="{{current_path}}">
+                    <input type="hidden" name="target_user_id" value="{{target_user_id}}">
+                    <input type="hidden" name="filename" id="editFilename">
+                    <textarea name="content" id="editContent" class="form-control" rows="15"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <!-- NEW: Cancel Button -->
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <!-- Save Button -->
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+           </div>
+        </form>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Share File</h5></div>
+            <div class="modal-body">
+                <p>Create a public link for: <strong id="shareFilenameDisplay"></strong></p>
+                
+                <div class="mb-3">
+                    <label>Expires in (Days):</label>
+                    <select id="shareDays" class="form-control">
+                        <option value="1">1 Day</option>
+                        <option value="3">3 Days</option>
+                        <option value="7" selected>7 Days</option>
+                        <option value="30">30 Days</option>
+                    </select>
+                </div>
+                
+                <div id="shareResult" class="d-none">
+                    <label>Share Link:</label>
+                    <div class="input-group">
+                        <input type="text" id="shareLinkInput" class="form-control" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copyShareLink()">Copy</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <!-- NEW: Cancel Button -->
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="generateLink()">Generate Link</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Media Player Modal -->
+<div class="modal fade" id="mediaModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title text-white" id="mediaTitle">Playing File</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="stopMedia()"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <!-- Video Player -->
+                <video id="videoPlayer" controls class="d-none w-100" style="max-height: 80vh;"></video>
+                
+                <!-- Audio Player -->
+                <div id="audioPlayerWrapper" class="d-none py-5">
+                    <i class="bi bi-music-note-beamed text-info" style="font-size: 5rem;"></i>
+                    <br><br>
+                    <audio id="audioPlayer" controls class="w-75"></audio>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rename Modal -->
+<div class="modal fade" id="renameModal">
+    <div class="modal-dialog">
+        <form action="/files/action" method="post">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Rename</h5></div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="rename">
+                    <input type="hidden" name="current_path" value="{{current_path}}">
+                    <!-- Support Admin Mode -->
+                    <input type="hidden" name="target_user_id" value="{{target_user_id}}">
+                    
+                    <input type="hidden" name="old_name" id="renameOldName">
+                    
+                    <div class="mb-3">
+                        <label>New Name</label>
+                        <input type="text" name="new_name" id="renameNewName" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Rename</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- New File Modal -->
+<div class="modal fade" id="newFileModal">
+    <div class="modal-dialog">
+        <form action="/files/action" method="post">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Create New File</h5></div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="mkfile">
+                    <input type="hidden" name="current_path" value="{{current_path}}">
+                    <input type="hidden" name="target_user_id" value="{{target_user_id}}">
+                    
+                    <div class="mb-3">
+                        <label>Filename (e.g., notes.txt, script.py)</label>
+                        <input type="text" name="name" class="form-control" placeholder="example.txt" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+async function editFile(filename, path) {
+    const response = await fetch(`/files/download?path=${path}&action=edit_load&target_user_id={{target_user_id}}`);
+    const text = await response.text();
+    document.getElementById('editFilename').value = filename;
+    document.getElementById('editContent').value = text;
+    new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+
+let currentShareFile = "";
+
+function openShareModal(filename) {
+    currentShareFile = filename;
+    document.getElementById('shareFilenameDisplay').innerText = filename;
+    document.getElementById('shareResult').classList.add('d-none');
+    document.getElementById('shareLinkInput').value = "";
+    new bootstrap.Modal(document.getElementById('shareModal')).show();
+}
+
+async function generateLink() {
+    const days = document.getElementById('shareDays').value;
+    const formData = new FormData();
+    formData.append('action', 'share');
+    formData.append('current_path', '{{current_path}}');
+    formData.append('target', currentShareFile);
+    formData.append('days', days);
+    formData.append('target_user_id', '{{target_user_id}}');
+
+    try {
+        const response = await fetch('/files/action', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+        if(data.link) {
+            document.getElementById('shareLinkInput').value = data.link;
+            document.getElementById('shareResult').classList.remove('d-none');
+        } else {
+            alert("Error generating link");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Request failed");
+    }
+}
+
+function copyShareLink() {
+    const copyText = document.getElementById("shareLinkInput");
+    copyText.select();
+    document.execCommand("copy");
+    alert("Copied to clipboard!");
+}
+
+function playMedia(filename, relativePath) {
+    // Determine type
+    const ext = filename.split('.').pop().toLowerCase();
+    const isVideo = ['mp4', 'webm', 'ogg'].includes(ext);
+    const isAudio = ['mp3', 'wav'].includes(ext);
+    
+    // Construct the URL for the ProtectedMediaHandler
+    // We need to know WHICH user's folder we are in.
+    // If target_user_id is present in URL (Admin mode), use it. 
+    // Otherwise use current user's ID (which we passed in templates).
+    
+    // NOTE: In dashboard.html we have {{target_user['id']}} available via template
+    const userId = "{{ target_user['id'] if target_user else user['id'] }}";
+    
+    // relativePath comes in like "folder/subfolder/file.mp4"
+    // The handler maps /media/ -> static/uploads/
+    // So full path needs to be /media/{userId}/{relativePath}
+    
+    // Ensure relativePath doesn't start with /
+    const cleanPath = relativePath.replace(/^\//, '');
+    const mediaUrl = `/media/${userId}/${cleanPath}`;
+
+    const modal = new bootstrap.Modal(document.getElementById('mediaModal'));
+    document.getElementById('mediaTitle').innerText = filename;
+    
+    const vPlayer = document.getElementById('videoPlayer');
+    const aPlayer = document.getElementById('audioPlayer');
+    const aWrapper = document.getElementById('audioPlayerWrapper');
+    
+    // Reset
+    vPlayer.classList.add('d-none');
+    vPlayer.pause();
+    vPlayer.src = "";
+    
+    aWrapper.classList.add('d-none');
+    aPlayer.pause();
+    aPlayer.src = "";
+
+    if (isVideo) {
+        vPlayer.src = mediaUrl;
+        vPlayer.classList.remove('d-none');
+    } else if (isAudio) {
+        aPlayer.src = mediaUrl;
+        aWrapper.classList.remove('d-none');
+    }
+    
+    modal.show();
+}
+
+function stopMedia() {
+    // Called when modal is closed
+    const vPlayer = document.getElementById('videoPlayer');
+    const aPlayer = document.getElementById('audioPlayer');
+    vPlayer.pause();
+    vPlayer.src = "";
+    aPlayer.pause();
+    aPlayer.src = "";
+}
+
+// Hook into bootstrap modal hidden event to ensure audio stops even if clicked outside
+document.getElementById('mediaModal').addEventListener('hidden.bs.modal', function () {
+    stopMedia();
+});
+
+// --- CLIPBOARD LOGIC ---
+
+// Check clipboard on page load
+document.addEventListener("DOMContentLoaded", function() {
+    updatePasteButton();
+});
+
+function setClipboard(mode, path) {
+    // Save action and path to Session Storage (clears when tab closes)
+    const data = {
+        mode: mode,
+        path: path,
+        filename: path.split('/').pop()
+    };
+    sessionStorage.setItem('pyfile_clipboard', JSON.stringify(data));
+    updatePasteButton();
+    
+    // Optional: Visual Feedback
+    const msg = mode === 'copy' ? 'Copied to clipboard' : 'Cut to clipboard';
+    alert(msg + ": " + data.filename);
+}
+
+function updatePasteButton() {
+    const clipboard = sessionStorage.getItem('pyfile_clipboard');
+    const btn = document.getElementById('btnPaste');
+    const badge = document.getElementById('pasteBadge');
+    
+    if (clipboard) {
+        const data = JSON.parse(clipboard);
+        btn.classList.remove('d-none');
+        badge.innerText = (data.mode === 'cut' ? 'Cut: ' : 'Copy: ') + data.filename;
+    } else {
+        btn.classList.add('d-none');
+    }
+}
+
+async function pasteFile() {
+    const clipboard = sessionStorage.getItem('pyfile_clipboard');
+    if (!clipboard) return;
+    
+    const data = JSON.parse(clipboard);
+    const btn = document.getElementById('btnPaste');
+    
+    // Disable button to prevent double click
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processing...';
+
+    const formData = new FormData();
+    formData.append('action', 'paste');
+    formData.append('current_path', '{{current_path}}');
+    formData.append('source_path', data.path);
+    formData.append('mode', data.mode);
+    formData.append('target_user_id', '{{target_user_id}}'); // Support Admin mode
+
+    try {
+        const response = await fetch('/files/action', {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            // If it was a 'cut' operation, clear clipboard
+            //if (data.mode === 'cut') {
+                sessionStorage.removeItem('pyfile_clipboard');
+            //}
+            location.reload(); // Refresh to see new file
+        } else {
+            alert("Error: " + result.msg);
+            btn.disabled = false;
+            updatePasteButton(); // Reset button text
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Request failed");
+        btn.disabled = false;
+        updatePasteButton();
+    }
+}
+function openRenameModal(filename) {
+    // Set the hidden input for the old name
+    document.getElementById('renameOldName').value = filename;
+    
+    // Pre-fill the new name input so user can edit it
+    document.getElementById('renameNewName').value = filename;
+    
+    // Show Modal
+    new bootstrap.Modal(document.getElementById('renameModal')).show();
+}
+</script>
+{% end %}

@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <div class="card p-4 shadow-sm">
+            <h3 class="text-center mb-3">Reset Password</h3>
+            
+            {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+            {% end %}
+            
+            {% if success %}
+            <div class="alert alert-success">{{ success }}</div>
+            {% end %}
+            
+            <p class="text-muted text-center small">Enter your email address and solve the captcha. We will send you a temporary password.</p>
+
+            <form method="post" action="/forgot">
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Captcha</label>
+                    <div class="input-group">
+                        <input type="text" name="captcha" class="form-control" placeholder="Enter code" required>
+                        <img src="/captcha/image" onclick="this.src='/captcha/image?'+Math.random()" style="cursor:pointer" title="Click to refresh image" height="38">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100">Send Reset Email</button>
+            </form>
+            
+            <div class="mt-3 text-center">
+                <a href="/login" class="text-decoration-none">&larr; Back to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}

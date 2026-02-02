@@ -1,0 +1,4 @@
+tornado
+bcrypt==4.0.1
+captcha
+Pillow

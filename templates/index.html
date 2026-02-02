@@ -1,0 +1,98 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- Hero Section -->
+<header class="hero-section py-5 mb-5">
+    <div class="container px-5">
+        <div class="row gx-5 align-items-center justify-content-center">
+            <div class="col-lg-8 col-xl-7 col-xxl-6">
+                <div class="my-5 text-center text-xl-start">
+                    <h1 class="display-5 fw-bolder text-white mb-2">Your Personal Cloud, Simplified.</h1>
+                    <p class="lead fw-normal text-white-50 mb-4">
+                        Securely store, edit, and share your files. 
+                        Get <strong>5GB of Free Storage</strong> instantly upon registration. 
+                        Open Source and ready for you.
+                    </p>
+                    <div class="d-grid gap-3 d-sm-flex justify-content-sm-center justify-content-xl-start">
+                        <a class="btn btn-light btn-lg px-4 me-sm-3 fw-bold text-primary" href="/register">Create Free Account</a>
+                        <a class="btn btn-outline-light btn-lg px-4" href="/source_code">Download Source</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5 col-xxl-6 d-none d-xl-block text-center">
+                <!-- Simple CSS Illustration of Cloud/Files -->
+                <i class="bi bi-hdd-network-fill" style="font-size: 10rem; color: rgba(255,255,255,0.8);"></i>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Features Section -->
+<section class="py-5" id="features">
+    <div class="container px-5 my-5">
+        <div class="row gx-5">
+            <div class="col-lg-4 mb-5 mb-lg-0">
+                <h2 class="fw-bolder mb-0">Professional Features for Free.</h2>
+                <p class="lead text-muted mt-2">Why choose Easy File Server?</p>
+            </div>
+            <div class="col-lg-8">
+                <div class="row gx-5 row-cols-1 row-cols-md-2">
+                    <div class="col mb-5 h-100">
+                        <div class="feature-icon"><i class="bi bi-hdd-fill"></i></div>
+                        <h2 class="h5">5GB Free Storage</h2>
+                        <p class="mb-0">Every user gets a private, isolated 5GB disk quota. Store your photos, documents, and code securely.</p>
+                    </div>
+                    <div class="col mb-5 h-100">
+                        <div class="feature-icon"><i class="bi bi-share-fill"></i></div>
+                        <h2 class="h5">Secure Sharing</h2>
+                        <p class="mb-0">Share files with colleagues via public links. Set expiration dates (1 to 30 days) for added security.</p>
+                    </div>
+                    <div class="col mb-5 h-100">
+                        <div class="feature-icon"><i class="bi bi-file-earmark-code-fill"></i></div>
+                        <h2 class="h5">Online Editor</h2>
+                        <p class="mb-0">Edit Python, HTML, and Text files directly in your browser without downloading them.</p>
+                    </div>
+                    <div class="col mb-5 h-100">
+                        <div class="feature-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                        <h2 class="h5">Privacy First</h2>
+                        <p class="mb-0">Your files are stored in your own directory. Admin tools allow easy management and recovery.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Open Source Section -->
+<section class="py-5 bg-white">
+    <div class="container px-5 my-5">
+        <div class="row gx-5 align-items-center">
+            <div class="col-lg-6 order-first order-lg-last text-center">
+                 <i class="bi bi-github" style="font-size: 8rem; color: #333;"></i>
+            </div>
+            <div class="col-lg-6">
+                <h2 class="fw-bolder display-6">100% Open Source</h2>
+                <p class="lead text-muted">
+                    Easy File Server is built with Python and Tornado. You can download the full source code and deploy it on your own server (Windows, Linux, or Mac).
+                </p>
+                <p class="mb-4">
+                    Customize the quota, change the branding, or add new features. It's your code.
+                </p>
+                <a class="btn btn-outline-dark" href="/source_code"><i class="bi bi-download"></i> Download Source Code (.zip)</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-light">
+    <div class="container px-5 my-5">
+        <div class="text-center">
+            <h2 class="fw-bolder">Ready to get started?</h2>
+            <p class="lead mb-4 text-muted">Join other users enjoying free, fast file storage today.</p>
+            <a class="btn btn-primary btn-lg fs-5 fw-bold" href="/register">Register Now</a>
+        </div>
+    </div>
+</section>
+
+{% end %}

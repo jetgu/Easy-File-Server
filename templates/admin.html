@@ -1,0 +1,125 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>Admin Panel</h2>
+<div class="row">
+    <!-- Settings Card (Same as before) -->
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">System Settings</div>
+            <div class="card-body">
+                <!-- ... settings form ... -->
+                 <form method="post">
+                    <input type="hidden" name="action" value="update_settings">
+                    <div class="mb-3">
+                        <label>Max Upload Size (MB)</label>
+                        <input type="number" name="max_upload_size" value="{{ settings['max_upload_size'] }}" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Download Speed Limit (KB/s)</label>
+                        <input type="number" name="download_speed_limit" value="{{ settings['download_speed_limit'] }}" class="form-control">
+                    </div>
+                    <button class="btn btn-primary w-100">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Users List (Updated) -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">Users Management</div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Quota (MB)</th> 
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u['id'] }}</td>
+                            <td>
+                                {{ u['email'] }}
+                                {% if u['is_admin'] %}<span class="badge bg-warning text-dark">Admin</span>{% end %}
+                            </td>
+                            <td>{{ u['quota'] }} MB</td> <!-- NEW -->
+                            <td>
+                                {% if u['is_active'] %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Disabled</span>
+                                {% end %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <!-- MANAGE FILES BUTTON -->
+                                    <a href="/?target_user_id={{u['id']}}" class="btn btn-outline-primary" title="Manage Files">
+                                        <i class="bi bi-folder2-open"></i> Files
+                                    </a>
+                                    <!-- NEW: Edit Quota Button -->
+                                    <button class="btn btn-outline-dark" onclick="openQuotaModal('{{u['id']}}', '{{u['quota']}}')">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    
+                                    <!-- TOGGLE STATUS FORM -->
+                                    {% if not u['is_admin'] %}
+                                    <form method="post" style="display:inline">
+                                        <input type="hidden" name="action" value="toggle_status">
+                                        <input type="hidden" name="user_id" value="{{ u['id'] }}">
+                                        <input type="hidden" name="current_status" value="{{ u['is_active'] }}">
+                                        {% if u['is_active'] %}
+                                        <button class="btn btn-outline-danger" title="Disable Account"><i class="bi bi-person-x-fill"></i></button>
+                                        {% else %}
+                                        <button class="btn btn-outline-success" title="Enable Account"><i class="bi bi-person-check-fill"></i></button>
+                                        {% end %}
+                                    </form>
+                                    {% end %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% end %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quota Modal -->
+<div class="modal fade" id="quotaModal">
+    <div class="modal-dialog">
+        <form method="post">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">Edit Quota</h5></div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="update_quota">
+                    <input type="hidden" name="user_id" id="quotaUserId">
+                    <div class="mb-3">
+                        <label>Disk Quota (MB)</label>
+                        <input type="number" name="quota_mb" id="quotaValue" class="form-control" required>
+                        <small class="text-muted">Default is 5120 MB (5 GB)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openQuotaModal(uid, currentQuota) {
+    document.getElementById('quotaUserId').value = uid;
+    document.getElementById('quotaValue').value = currentQuota;
+    new bootstrap.Modal(document.getElementById('quotaModal')).show();
+}
+</script>
+
+{% end %}

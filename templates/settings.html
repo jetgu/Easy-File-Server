@@ -1,0 +1,69 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <h2>Account Settings</h2>
+    
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% end %}
+    
+    {% if success %}
+    <div class="alert alert-success">{{ success }}</div>
+    {% end %}
+
+    <div class="row mt-4">
+        <!-- Profile Info Section -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">Profile Information</div>
+                <div class="card-body">
+                    <form method="post" action="/settings">
+                        <input type="hidden" name="action" value="update_info">
+                        
+                        <div class="mb-3">
+                            <label>Email (Cannot be changed)</label>
+                            <input type="text" class="form-control" value="{{ user['email'] }}" disabled>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label>Personal Info</label>
+                            <textarea name="info" class="form-control" rows="4">{{ user['info'] if user['info'] else '' }}</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Update Info</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Section -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">Change Password</div>
+                <div class="card-body">
+                    <form method="post" action="/settings">
+                        <input type="hidden" name="action" value="change_password">
+                        
+                        <div class="mb-3">
+                            <label>Current Password</label>
+                            <input type="password" name="old_password" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label>New Password (> 8 chars)</label>
+                            <input type="password" name="new_password" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label>Confirm New Password</label>
+                            <input type="password" name="confirm_password" class="form-control" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-warning">Change Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
